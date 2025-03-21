@@ -15,10 +15,6 @@ base_url = f'https://{spark.conf.get("spark.databricks.workspaceUrl")}/serving-e
 
 # COMMAND ----------
 
-base_url
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC #Introduction
 # MAGIC
