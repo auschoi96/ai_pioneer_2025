@@ -922,10 +922,13 @@ Markdown(f"The LLM Output:\n\n {chat_completion.choices[0].message.content}")
 # COMMAND ----------
 
 import requests
+
 def pokemon_lookup(pokemon_name):
     url = f"https://pokeapi.co/api/v2/pokemon/{pokemon_name.lower()}"
-    response = requests.get(url)
-    if response.status_code == 200:
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raises an exception for 4XX/5XX responses
+        
         pokemon_data = response.json()
         pokemon_info = {
             "name": pokemon_data["name"],
@@ -936,9 +939,9 @@ def pokemon_lookup(pokemon_name):
             "stats_name": [stat['stat']['name'] for stat in pokemon_data["stats"]],
             "stats_no": [stat['base_stat'] for stat in pokemon_data["stats"]]
         }
-        results = str(pokemon_info)
-        return results
-    else:
+        return pokemon_info  # Return the dictionary directly
+    except requests.exceptions.RequestException as e:
+        print(f"API request error: {e}")
         return None
 
 # COMMAND ----------

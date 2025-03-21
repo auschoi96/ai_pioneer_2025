@@ -4,7 +4,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("catalog_name","main")
+dbutils.widgets.text("catalog_name","austin_choi_demo_catalog")
 
 # COMMAND ----------
 
@@ -27,4 +27,5 @@ print(catalog_name)
 dbutils.library.restartPython()
 
 # COMMAND ----------
+
 
