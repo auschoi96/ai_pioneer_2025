@@ -1,0 +1,15 @@
+catalog = "genai_in_production_demo_catalog"
+agent_schema = "agents"
+demo_schema = "demo_data"
+volumeName = "rag_volume"
+folderName = "sample_pdf_folder"
+vectorSearchIndexName = "pdf_content_embeddings_index"
+# vectorSearchIndexName = "databricks_documentation_index"
+chunk_size = 1000
+chunk_overlap = 50
+embeddings_endpoint = "databricks-gte-large-en"
+VECTOR_SEARCH_ENDPOINT_NAME = "one-env-shared-endpoint-4" 
+chatBotModel = "databricks-meta-llama-3-3-70b-instruct"
+max_tokens = 2000
+finalchatBotModelName = "rag_bot"
+yourEmailAddress = "austin.choi@databricks.com"

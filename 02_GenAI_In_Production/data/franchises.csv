@@ -1,0 +1,49 @@
+franchiseID,name,city,district,zipcode,country,size,longitude,latitude
+3000000,The Crumbly Nook,Singapore,Tanjong Pagar,088532,Singapore,L,151.2763,-33.8915
+3000001,Tokyo Treats,Tokyo,Shibuya,150-0042,Japan,M,139.701,35.6586
+3000002,Baked Bliss,San Francisco,Mission,94110,US,XL,-122.4194,37.7593
+3000003,Sugar Rush,Melbourne,Fitzroy,3065,Australia,S,144.9804,-37.8005
+3000004,Kobe Konfections,Kobe,Kitano,657-0838,Japan,XXL,135.2216,34.6806
+3000005,Floured Fantasies,Los Angeles,Silver Lake,90026,US,XL,-118.2674,34.0877
+3000006,Crumby Delights,Brisbane,West End,4101,Australia,M,153.0093,-27.4792
+3000007,Kyoto Kravings,Kyoto,Gion,605-0811,Japan,S,135.9792,35.0036
+3000008,Doughy Dreams,Chicago,Wicker Park,60622,US,XXL,-87.6782,41.9064
+3000009,The Baking Lab,Perth,Leederville,6007,Australia,L,115.8344,-31.9393
+3000010,Osaka Ovens,Osaka,Amerikamura,530-0001,Japan,M,135.4971,34.6997
+3000011,Butter Babies,Miami,Wynwood,33127,US,XL,-80.1982,25.8024
+3000012,Crust Couture,Adelaide,Norwood,5067,Australia,S,138.6366,-34.946
+3000013,Hiroshima Delicacies,Hiroshima,Nagarekawa,730-0035,Japan,XXL,132.4586,34.3905
+3000014,Sweet Temptations,Seattle,Capitol Hill,98122,US,L,-122.3189,47.624
+3000015,The Bake Shoppe,Gold Coast,Miami,4217,Australia,M,153.4276,-28.0084
+3000016,Nagoya Nibbles,Nagoya,Sakae,460-0008,Japan,XL,136.9074,35.1698
+3000017,Crumbly Creations,Austin,East 6th Street,78702,US,S,-97.7293,30.2646
+3000018,Fukuoka Fancies,Fukuoka,Daimyo,810-0041,Japan,XXL,130.4022,33.5903
+3000019,Dough Dreamers,Portland,Pearl District,97209,US,L,-122.6809,45.5311
+3000020,Sapporo Sweets,Sapporo,Susukino,064-0821,Japan,M,141.3545,43.064
+3000021,Butter Bliss,Honolulu,Kaka'ako,96813,US,XL,-157.8646,21.2933
+3000022,Sugar Shack,Vancouver,Main Street,V5T 3J7,Canada,S,-123.1004,49.2605
+3000023,Sendai Savories,Sendai,Kokubuncho,980-0813,Japan,XXL,140.8725,38.2677
+3000024,Flour Power,Denver,RiNo,80205,US,L,-104.9821,39.7684
+3000025,Hiratsuka Hideaways,Hiratsuka,Sakuradori,254-0801,Japan,M,139.3479,35.3251
+3000026,Crumble Delights,Nashville,The Gulch,37203,US,XL,-86.7857,36.1408
+3000027,Kanazawa Konfections,Kanazawa,Tatemachi,920-0854,Japan,S,136.6513,36.575
+3000028,Batter Up,Philadelphia,Fishtown,19125,US,XXL,-75.1271,39.9688
+3000029,Suita Sweets,Suita,Shukugawa,564-0031,Japan,L,135.5132,34.8106
+3000030,Caramel Cravings,Boston,Back Bay,02116,US,M,-71.0772,42.3499
+3000031,Niigata Nibbles,Niigata,Furumachi,950-0086,Japan,XL,139.0574,37.9176
+3000032,Sweet Temptations,New Orleans,Bywater,70117,US,S,-89.9653,29.9688
+3000033,Chiba Chews,Chiba,Chuo-ku,260-0835,Japan,XXL,140.1155,35.6093
+3000034,Frosted Fantasies,Las Vegas,Arts District,89101,US,L,-115.149,36.1676
+3000035,Kumamoto Crumbles,Kumamoto,Kami-tori,860-0835,Japan,M,130.7072,32.8139
+3000036,Sugar High,Washington D.C.,U Street,20009,US,XL,-77.029,38.9173
+3000037,Kagoshima Confections,Kagoshima,Tenmonkan,890-0052,Japan,S,130.5506,31.5948
+3000038,Dough Delights,Seattle,Ballard,98107,US,XXL,-122.386,47.6724
+3000039,Naha Nibbles,Naha,Kokusai Street,900-0015,Japan,L,127.6864,26.2165
+3000040,Sweetie Pies,Amsterdam,De Pijp,1072,Netherlands,M,4.9026,52.3536
+3000041,Okayama Ovens,Okayama,Omotemachi,700-0821,Japan,XL,133.9402,34.6673
+3000042,Buttercream Dreams,Paris,Le Marais,75003,France,S,2.3623,48.8588
+3000043,Matsuyama Morsels,Matsuyama,Dogo Onsen,790-0842,Japan,XXL,132.77,33.843
+3000044,Sugar Rush,Berlin,Kreuzberg,10963,Germany,L,13.4171,52.4964
+3000045,Aomori Appetites,Aomori,Furukawa,038-0022,Japan,M,140.7683,40.8328
+3000046,Baked Bliss,Rome,Trastevere,00153,Italy,XL,12.471,41.8897
+3000047,Sweet Sinsations,Stockholm,Sodermalm,116 45,Sweden,S,18.072,59.3144
