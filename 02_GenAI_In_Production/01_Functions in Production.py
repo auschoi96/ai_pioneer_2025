@@ -24,6 +24,42 @@
 
 # COMMAND ----------
 
+# MAGIC %md ##First, set up environment variables
+
+# COMMAND ----------
+
+!pip install transformers datasets mlflow
+dbutils.library.restartPython()
+
+# COMMAND ----------
+
+from databricks.sdk import WorkspaceClient
+
+w = WorkspaceClient()
+user_email = w.current_user.me().display_name
+username = user_email.split("@")[0]
+default_schema_name = username.replace(" ", "_").lower()
+
+# COMMAND ----------
+
+dbutils.widgets.text("catalog_name", "austin_choi_demo_catalog", "Data UC Catalog") #change this to a catalog of your choice
+dbutils.widgets.text("schema_name", "demo_data", "Data UC Schema") #change this to a schema of your choice
+dbutils.widgets.text("table_name", "batch_sentiment_data", "Data UC Table") #change this to a table name of your choice 
+
+catalog_name = dbutils.widgets.get("catalog_name")
+schema_name = dbutils.widgets.get("schema_name")
+table_name = dbutils.widgets.get("table_name")
+
+# COMMAND ----------
+
+spark.sql(
+f"""
+    CREATE SCHEMA IF NOT EXISTS {catalog_name}.{schema_name}
+"""
+)
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC #Agent Code Tools
 
@@ -70,42 +106,6 @@
 
 # COMMAND ----------
 
-# MAGIC %md ## Set up environment variables
-
-# COMMAND ----------
-
-!pip install transformers datasets mlflow
-dbutils.library.restartPython()
-
-# COMMAND ----------
-
-from databricks.sdk import WorkspaceClient
-
-w = WorkspaceClient()
-user_email = w.current_user.me().display_name
-username = user_email.split("@")[0]
-default_schema_name = username.replace(" ", "_").lower()
-
-# COMMAND ----------
-
-dbutils.widgets.text("catalog_name", "austin_choi_demo_catalog", "Data UC Catalog") #change this to a catalog of your choice
-dbutils.widgets.text("schema_name", "demo_data", "Data UC Schema") #change this to a schema of your choice
-dbutils.widgets.text("table_name", "batch_sentiment_data", "Data UC Table") #change this to a table name of your choice 
-
-catalog_name = dbutils.widgets.get("catalog_name")
-schema_name = dbutils.widgets.get("schema_name")
-table_name = dbutils.widgets.get("table_name")
-
-# COMMAND ----------
-
-spark.sql(
-f"""
-    CREATE SCHEMA IF NOT EXISTS {catalog_name}.{schema_name}
-"""
-)
-
-# COMMAND ----------
-
 # MAGIC %md ## Set up data
 # MAGIC
 # MAGIC We'll use an opensource Huggingface finance news dataset to classify company sentiment
@@ -148,8 +148,8 @@ display(
 # DBTITLE 1,Validation Set 2.4K Rows
 import time
 
-endpoint_name = "databricks-meta-llama-3-1-8b-instruct" #12 seconds average 
-# endpoint_name = "databricks-meta-llama-3-3-70b-instruct" #180 seconds average
+# endpoint_name = "databricks-meta-llama-3-1-8b-instruct" #12 seconds average 
+endpoint_name = "databricks-meta-llama-3-3-70b-instruct" #180 seconds average
 start_time = time.time()
 
 command = f"""
