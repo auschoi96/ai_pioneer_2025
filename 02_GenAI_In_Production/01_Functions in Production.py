@@ -1,5 +1,66 @@
 # Databricks notebook source
-# MAGIC %md # Batch Inference Sentiment Demo
+# MAGIC %md
+# MAGIC # Productionalizing Custom Tools 
+# MAGIC
+# MAGIC What you just saw were built in, out of the box solutions you can use immediately on your data. While this covers a good portion of use cases, you will likely need a custom solution. 
+# MAGIC
+# MAGIC ### Mosaic AI Tools on Unity Catalog
+# MAGIC
+# MAGIC You can create and host functions/tools on Unity Catalog! You get the benefit of Unity Catalog but for your functions! 
+# MAGIC
+# MAGIC While you can create your own tools using the same code that you built your agent (i.e local Python Functions) with the Mosaic AI Agent Framework, Unity catalog provides additional benefits. Here is a comparison 
+# MAGIC
+# MAGIC 1. **Unity Catalog function**s: Unity Catalog functions are defined and managed within Unity Catalog, offering built-in security and compliance features. Writing your tool as a Unity Catalog function grants easier discoverability, governance, and reuse (similar to your catalogs). Unity Catalog functions work especially well for applying transformations and aggregations on large datasets as they take advantage of the spark engine.
+# MAGIC
+# MAGIC 2. **Agent code tools**: These tools are defined in the same code that defines the AI agent. This approach is useful when calling REST APIs, using arbitrary code or libraries, or executing low-latency tools. However, this approach lacks the built-in discoverability and governance provided by Unity Catalog functions.
+# MAGIC
+# MAGIC Unity Catalog functions have the same limitations seen here: https://docs.databricks.com/en/sql/language-manual/sql-ref-syntax-ddl-create-sql-function.html 
+# MAGIC
+# MAGIC Additionally, the only external framework these functions are compatible with is Langchain 
+# MAGIC
+# MAGIC So, if you're planning on using complex python code for your tool, you will likely just need to create Agent Code Tools. 
+# MAGIC
+# MAGIC Below is an implementation of both
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #Agent Code Tools
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Why even use tools to begin with? 
+# MAGIC
+# MAGIC Function calling or tool calling help ensure the LLM has the most accurate information possible. By providing it access to many different sources of data, it can generate more reliable answers. 
+# MAGIC
+# MAGIC Each framework like Langchain or LlamaIndex handles tool calling different. You can also use Python to do tool calling. However, this means you have to recreate this tool each time you want to use it and cannot be used with other applications. Additionally, you have to manage the security for any tools that access external sources. 
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC # Enter Unity Catalog Tool Calling 
+# MAGIC
+# MAGIC Unity Catalog Tool Calling allows you to benefit from all the governance, security and unified platform benefits of Unity Catalog. Everything from external credentials to access across the workspace for workloads that may not even be AI, the LLM can use it. 
+# MAGIC
+# MAGIC You'll notice that it's also a UDF, which benefits from our serverless SQL warehouses. 
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC CREATE OR REPLACE FUNCTION identifier(:catalog_name||'.'||:agent_schema||'.'||'purchase_location')()
+# MAGIC     RETURNS TABLE(name STRING, purchases INTEGER)
+# MAGIC     COMMENT 'Use this tool to find total purchase information about a particular location. This tool will provide a list of destinations that you will use to help you answer questions'
+# MAGIC     RETURN SELECT dl.name AS Destination, count(tp.destination_id) AS Total_Purchases_Per_Destination
+# MAGIC              FROM main.dbdemos_fs_travel.travel_purchase tp join main.dbdemos_fs_travel.destination_location dl on tp.destination_id = dl.destination_id
+# MAGIC              group by dl.name
+# MAGIC              order by count(tp.destination_id) desc
+# MAGIC              LIMIT 10;
+
+# COMMAND ----------
+
+# MAGIC %md 
+# MAGIC #Batch Inference Sentiment Demo
 # MAGIC
 # MAGIC In this notebook, we'll walk through an end-to-end batch inference solution to extract sentiment from financial Twitter data. The notebook covers:
 # MAGIC - Setting up an environment, relevant variables, and underlying UC data
@@ -176,7 +237,9 @@ display(confusion_matrix)
 
 # MAGIC %md ## Using Structured Output with Batch Inference
 # MAGIC
-# MAGIC We can enforce formatting constraints rather than relying on prompts
+# MAGIC We can enforce formatting constraints rather than relying on prompts. This is particularly useful for smaller models that struggle in accuracy. If we know what outputs we are looking for, we can enforce it.
+# MAGIC
+# MAGIC Documentation: https://docs.databricks.com/aws/en/sql/language-manual/functions/ai_query#enforce-output-schema-with-structured-output
 
 # COMMAND ----------
 
@@ -271,6 +334,52 @@ display(confusion_matrix_structured)
 
 # MAGIC %sql
 # MAGIC SELECT `Misspelled Make`, identifier(CONCAT(:catalog_name||'.'||:schema_name||'.'||'batch_inference'))(`Misspelled Make`) AS ai_guess from identifier(CONCAT(:catalog_name||'.'||:schema_name||'.'||'synthetic_car_data'));
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #Access UC Functions via Code
+# MAGIC
+# MAGIC You can use Langchain to access UC functions through code! 
+
+# COMMAND ----------
+
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from databricks_langchain.uc_ai import (
+    DatabricksFunctionClient,
+    UCFunctionToolkit,
+    set_uc_function_client,
+)
+from databricks_langchain import ChatDatabricks
+from langchain_core.prompts import ChatPromptTemplate
+
+client = DatabricksFunctionClient()
+set_uc_function_client(client)
+
+# Initialize LLM and tools
+llm = ChatDatabricks(endpoint="databricks-meta-llama-3-3-70b-instruct")
+tools = UCFunctionToolkit(
+    # Include functions as tools using their qualified names.
+    # You can use "{catalog_name}.{schema_name}.*" to get all functions in a schema.
+    function_names=[f"{catalog_name}.{schema_name}.*"]
+).tools
+
+prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are a helpful assistant. Make sure to use tool for information.",
+        ),
+        ("placeholder", "{chat_history}"),
+        ("human", "{input}"),
+        ("placeholder", "{agent_scratchpad}"),
+    ]
+)
+
+agent = create_tool_calling_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+result = agent_executor.invoke({"input": "start batch inference"})
+print(result['output'])
 
 # COMMAND ----------
 

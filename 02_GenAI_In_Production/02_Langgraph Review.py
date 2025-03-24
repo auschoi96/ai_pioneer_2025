@@ -652,3 +652,4 @@ agents.deploy(UC_MODEL_NAME, uc_registered_model_info.version, tags = {"endpoint
 
 # COMMAND ----------
 
+
