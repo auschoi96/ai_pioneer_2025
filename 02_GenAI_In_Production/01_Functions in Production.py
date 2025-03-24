@@ -84,7 +84,7 @@ f"""
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE OR REPLACE FUNCTION identifier(:catalog_name||'.'||:agent_schema||'.'||'purchase_location')()
+# MAGIC CREATE OR REPLACE FUNCTION identifier(:catalog_name||'.'||:schema_name||'.'||'purchase_location')()
 # MAGIC     RETURNS TABLE(name STRING, purchases INTEGER)
 # MAGIC     COMMENT 'Use this tool to find total purchase information about a particular location. This tool will provide a list of destinations that you will use to help you answer questions'
 # MAGIC     RETURN SELECT dl.name AS Destination, count(tp.destination_id) AS Total_Purchases_Per_Destination
