@@ -1,4 +1,9 @@
 # Databricks notebook source
+# MAGIC %pip install openai
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
 from IPython.display import Markdown
 from openai import OpenAI
 import os
