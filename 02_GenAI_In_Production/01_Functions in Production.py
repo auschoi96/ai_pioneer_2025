@@ -28,35 +28,14 @@
 
 # COMMAND ----------
 
-!pip install transformers datasets mlflow
+!pip install transformers datasets mlflow langchain databricks_langchain
 dbutils.library.restartPython()
 
 # COMMAND ----------
 
-from databricks.sdk import WorkspaceClient
-
-w = WorkspaceClient()
-user_email = w.current_user.me().display_name
-username = user_email.split("@")[0]
-default_schema_name = username.replace(" ", "_").lower()
-
-# COMMAND ----------
-
-dbutils.widgets.text("catalog_name", "austin_choi_demo_catalog", "Data UC Catalog") #change this to a catalog of your choice
-dbutils.widgets.text("schema_name", "demo_data", "Data UC Schema") #change this to a schema of your choice
-dbutils.widgets.text("table_name", "batch_sentiment_data", "Data UC Table") #change this to a table name of your choice 
-
-catalog_name = dbutils.widgets.get("catalog_name")
-schema_name = dbutils.widgets.get("schema_name")
-table_name = dbutils.widgets.get("table_name")
-
-# COMMAND ----------
-
-spark.sql(
-f"""
-    CREATE SCHEMA IF NOT EXISTS {catalog_name}.{schema_name}
-"""
-)
+catalog_name = "genai_in_production_demo_catalog"
+schema_name = "demo_data"
+table_name = "batch_sentiment_data"
 
 # COMMAND ----------
 
@@ -84,14 +63,14 @@ f"""
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE OR REPLACE FUNCTION identifier(:catalog_name||'.'||:schema_name||'.'||'purchase_location')()
-# MAGIC     RETURNS TABLE(name STRING, purchases INTEGER)
-# MAGIC     COMMENT 'Use this tool to find total purchase information about a particular location. This tool will provide a list of destinations that you will use to help you answer questions'
+# MAGIC CREATE OR REPLACE FUNCTION genai_in_production_demo_catalog.agents.purchase_location()
+# MAGIC     RETURNS Table(name STRING, purchases INTEGER)
+# MAGIC     COMMENT 'Use this tool to find total purchase information about a particular location. This tool will provide a list of destinations that you will use to help you answer questions. Only use this if the user asks about locations.'
 # MAGIC     RETURN SELECT dl.name AS Destination, count(tp.destination_id) AS Total_Purchases_Per_Destination
-# MAGIC              FROM main.dbdemos_fs_travel.travel_purchase tp join main.dbdemos_fs_travel.destination_location dl on tp.destination_id = dl.destination_id
+# MAGIC              FROM genai_in_production_demo_catalog.demo_data.fs_travel tp join genai_in_production_demo_catalog.demo_data.destinations dl on tp.destination_id = dl.destination_id
 # MAGIC              group by dl.name
 # MAGIC              order by count(tp.destination_id) desc
-# MAGIC              LIMIT 10;
+# MAGIC              LIMIT 10
 
 # COMMAND ----------
 
@@ -106,36 +85,36 @@ f"""
 
 # COMMAND ----------
 
-# MAGIC %md ## Set up data
+# MAGIC %md ## Set up data (Optional)
 # MAGIC
 # MAGIC We'll use an opensource Huggingface finance news dataset to classify company sentiment
 
 # COMMAND ----------
 
-from datasets import load_dataset
+# from datasets import load_dataset
 
-dataset = load_dataset("zeroshot/twitter-financial-news-sentiment", cache_dir=None) 
-
-# COMMAND ----------
-
-train = dataset['train'].to_pandas()
-validation = dataset['validation'].to_pandas()
-validation
+# dataset = load_dataset("zeroshot/twitter-financial-news-sentiment", cache_dir=None) 
 
 # COMMAND ----------
 
-train_spark = spark.createDataFrame(train)
-validation_spark = spark.createDataFrame(validation)
-train_spark.write.mode('overwrite').saveAsTable(".".join([catalog_name, schema_name, f"{table_name}_train"]))
-validation_spark.write.mode('overwrite').saveAsTable(".".join([catalog_name, schema_name, f"{table_name}_val"]))
+# train = dataset['train'].to_pandas()
+# validation = dataset['validation'].to_pandas()
+# validation
 
 # COMMAND ----------
 
-display(
-    spark.sql(
-        f"SELECT * FROM {catalog_name}.{schema_name}.{table_name}_train LIMIT 10"
-    )
-)
+# train_spark = spark.createDataFrame(train)
+# validation_spark = spark.createDataFrame(validation)
+# train_spark.write.mode('overwrite').saveAsTable(".".join([catalog_name, schema_name, f"{table_name}_train"]))
+# validation_spark.write.mode('overwrite').saveAsTable(".".join([catalog_name, schema_name, f"{table_name}_val"]))
+
+# COMMAND ----------
+
+# display(
+#     spark.sql(
+#         f"SELECT * FROM {catalog_name}.{schema_name}.{table_name}_train LIMIT 10"
+#     )
+# )
 
 # COMMAND ----------
 
@@ -321,7 +300,7 @@ display(confusion_matrix_structured)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE OR REPLACE FUNCTION identifier(CONCAT(:catalog_name||'.'||:schema_name||'.'||'batch_inference'))(text STRING)
+# MAGIC CREATE OR REPLACE FUNCTION genai_in_production_demo_catalog.agents.batch_inference(text STRING)
 # MAGIC     RETURNS STRING
 # MAGIC     COMMENT 'When user says, start batch inference, Use this tool to run a batch inference job to review and correct the spelling of make of a car.'
 # MAGIC     RETURN SELECT   -- Placeholder for the input column
@@ -333,7 +312,7 @@ display(confusion_matrix_structured)
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC SELECT `Misspelled Make`, identifier(CONCAT(:catalog_name||'.'||:schema_name||'.'||'batch_inference'))(`Misspelled Make`) AS ai_guess from identifier(CONCAT(:catalog_name||'.'||:schema_name||'.'||'synthetic_car_data'));
+# MAGIC SELECT `Misspelled_Make`, genai_in_production_demo_catalog.agents.batch_inference(`Misspelled_Make`) AS ai_guess from genai_in_production_demo_catalog.demo_data.synthetic_car_data;
 
 # COMMAND ----------
 
@@ -385,3 +364,154 @@ print(result['output'])
 
 # MAGIC %md
 # MAGIC #Workshop: Make your own Response Structure! 
+# MAGIC
+# MAGIC Use a combination of prompt engineering and the response structure to do the following: 
+# MAGIC
+# MAGIC ##Task 1
+# MAGIC Your first task is to add additional analysis to the news that's relevant to your financial firm. You need to add the following details: 
+# MAGIC
+# MAGIC 1. A summary of the news. (Hint: This should just be text)
+# MAGIC 2. Key tickers that may be relevant to the news. (Hint: This should be a list of tickers)
+# MAGIC 3. Impact this news will have on the market by classifying it as low, medium or high. (Hint: This should be a list of impact values)
+# MAGIC
+# MAGIC These should come as three new columns ontop of the sentiment classification column you made earlier for a total of four columns. All four columns MUST be outputted
+# MAGIC
+# MAGIC In Cell 39, you will have a partially filled in response_schema that you can fill out to accomplish the three items above. Everything you need to fill in to marked as _**TODO**_
+# MAGIC
+# MAGIC ##Task 2
+# MAGIC Because you added 3 new outputs, you will need to adjust your prompt to clarify what these outputs should do. This is because, while the response structure enforces a structure type, you still need to instruct the LLM what it should do to generate these outputs. 
+# MAGIC
+# MAGIC In Cell 40, you will have a partially filled in prompt. It will follow what we call a "routine" strategy which is simply defining all the steps the LLM must perform. You just need to fill out an instruction per task. 
+# MAGIC
+# MAGIC Once you complete both tasks, run both cells to see what happens! 
+
+# COMMAND ----------
+
+response_schema = """
+{
+    "type": "json_schema",
+    "json_schema": {
+        "name": "financial_tweet_analysis",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "sentiment": { 
+                    "type": "string",
+                    "enum": ["0", "1", "2"]
+                },
+                "summary": { 
+                    "type": "TODO" 
+                },
+                "key_tickers": { 
+                    "type": "TODO",
+                    "TODO": [TODO]
+                },
+                "impact_level": {
+                    "type": "TODO",
+                    "TODO": [TODO]
+                }
+            },
+            "required": [TODO]
+        }
+    }
+}
+"""
+
+# COMMAND ----------
+
+import time
+endpoint_name = "databricks-meta-llama-3-1-8b-instruct" #14 seconds average 
+start_time = time.time()
+
+result_structured = spark.sql(
+f"""
+    SELECT text,  
+    ai_query(
+        \'{endpoint_name}\', --endpoint name
+        CONCAT('Analyze this financial tweet and provide the following:
+1. Classify sentiment as 0 for bearish, 1 for bullish, or 2 for neutral
+2. TODO
+3. TODO
+4. TODO
+
+Respond with JSON containing fields for "sentiment", "summary", "key_tickers", and "impact_level".', text),
+        responseFormat => '{response_schema}'
+    ) AS analysis_result,
+    CAST(get_json_object(analysis_result, '$.sentiment') AS LONG) AS sentiment_pred_value,
+    get_json_object(analysis_result, 'TODO') AS TODO,
+    get_json_object(analysis_result, 'TODO') AS TODO,
+    get_json_object(analysis_result, 'TODO') AS TODO
+    FROM {catalog_name}.{schema_name}.{table_name}_val
+""")
+display(result_structured)
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Execution time: {execution_time} seconds")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #Example Answers Below
+
+# COMMAND ----------
+
+response_schema = """
+{
+    "type": "json_schema",
+    "json_schema": {
+        "name": "financial_tweet_analysis",
+        "schema": {
+            "type": "object",
+            "properties": {
+                "sentiment": { 
+                    "type": "string",
+                    "enum": ["0", "1", "2"]
+                },
+                "summary": { 
+                    "type": "string"
+                },
+                "key_tickers": { 
+                    "type": "string",
+                    "enum": ["AAPL", "AMZN", "GOOGL", "MSFT", "TSLA", "NVDA", "META", "NIO", "TSLA", "AMC", "NFLX", "NKE", "PYPL", "DIS", "INTC", "FB", "CMCSA", "BABA", "SBU", "T", "VZ", "XOM", "JPM", "GS", "BAC", "WFC", "C", "PFE", "MRK", "UNH", "ABBV", "JNJ", "V", "WMT", "HD", "MA", "CAT", "KO", "MCD", "WBA", "PEP", "M", "CVX", "COST", "PM", "DOW", "VOO", "VTI", "QQQ", "DIA", "SPY", "XLK", "XLV", "XLI", "XLB", "XLY", "XLP", "XLF", "XLE"]
+                },
+                "impact_level": {
+                    "type": "string",
+                    "enum": ["low", "medium", "high"]
+                }
+            },
+            "required": ["sentiment", "summary", "key_tickers", "impact_level"]
+        }
+    }
+}
+"""
+
+# COMMAND ----------
+
+import time
+endpoint_name = "databricks-meta-llama-3-1-8b-instruct" #14 seconds average 
+start_time = time.time()
+
+result_structured = spark.sql(
+f"""
+    SELECT text,  
+    ai_query(
+        \'{endpoint_name}\', --endpoint name
+        CONCAT('Analyze this financial tweet and provide the following:
+1. Classify sentiment as 0 for bearish, 1 for bullish, or 2 for neutral
+2. Write a brief one-sentence summary of the key information
+3. List potential stock tickers mentioned or implied (comma-separated)
+4. Rate the market impact as low, medium, or high
+
+Respond with JSON containing fields for "sentiment", "summary", "key_tickers", and "impact_level".', text),
+        responseFormat => '{response_schema}'
+    ) AS analysis_result,
+    CAST(get_json_object(analysis_result, '$.sentiment') AS LONG) AS sentiment_pred_value,
+    get_json_object(analysis_result, '$.summary') AS tweet_summary,
+    get_json_object(analysis_result, '$.key_tickers') AS relevant_tickers,
+    get_json_object(analysis_result, '$.impact_level') AS market_impact
+    FROM {catalog_name}.{schema_name}.{table_name}_val
+""")
+display(result_structured)
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"Execution time: {execution_time} seconds")

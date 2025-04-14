@@ -1,8 +1,4 @@
 # Databricks notebook source
-# MAGIC %run ./config
-
-# COMMAND ----------
-
 from IPython.display import Markdown
 from openai import OpenAI
 import os
@@ -161,7 +157,7 @@ base_url = f'https://{spark.conf.get("spark.databricks.workspaceUrl")}/serving-e
 
 # MAGIC %sql
 # MAGIC SELECT review, ai_gen('Generate a response to the following review: ' || review) as answer
-# MAGIC from austin_choi_demo_catalog.demo_data.customer_demo_data_reviews
+# MAGIC from genai_in_production_demo_catalog.demo_data.reviews
 # MAGIC Limit 5;
 
 # COMMAND ----------
@@ -176,7 +172,7 @@ base_url = f'https://{spark.conf.get("spark.databricks.workspaceUrl")}/serving-e
 
 # MAGIC %sql
 # MAGIC SELECT review, ai_extract(review, array("store", "product")) as Keywords
-# MAGIC from austin_choi_demo_catalog.demo_data.customer_demo_data_reviews
+# MAGIC from genai_in_production_demo_catalog.demo_data.reviews
 # MAGIC Limit 3;
 
 # COMMAND ----------
@@ -191,7 +187,7 @@ base_url = f'https://{spark.conf.get("spark.databricks.workspaceUrl")}/serving-e
 
 # MAGIC %sql
 # MAGIC SELECT review, ai_analyze_sentiment(review) as Sentiment
-# MAGIC from austin_choi_demo_catalog.demo_data.customer_demo_data_reviews
+# MAGIC from genai_in_production_demo_catalog.demo_data.reviews
 # MAGIC Limit 5;
 
 # COMMAND ----------
@@ -206,7 +202,7 @@ base_url = f'https://{spark.conf.get("spark.databricks.workspaceUrl")}/serving-e
 
 # MAGIC %sql
 # MAGIC SELECT country, ai_classify(country, ARRAY("APAC", "AMER", "EU")) as Region
-# MAGIC from austin_choi_demo_catalog.demo_data.customer_demo_data_franchises
+# MAGIC from genai_in_production_demo_catalog.demo_data.franchises
 # MAGIC limit 5;
 
 # COMMAND ----------
@@ -222,7 +218,7 @@ base_url = f'https://{spark.conf.get("spark.databricks.workspaceUrl")}/serving-e
 
 # MAGIC %sql
 # MAGIC SELECT review, ai_translate(review, "es")
-# MAGIC from austin_choi_demo_catalog.demo_data.customer_demo_data_reviews
+# MAGIC from genai_in_production_demo_catalog.demo_data.reviews
 # MAGIC limit 3;
 
 # COMMAND ----------
@@ -237,7 +233,7 @@ base_url = f'https://{spark.conf.get("spark.databricks.workspaceUrl")}/serving-e
 
 # MAGIC %sql
 # MAGIC SELECT first_name, last_name, (first_name || " " || last_name || " lives at " || address) as unmasked_output, ai_mask(first_name || "" || last_name || " lives at " || address, array("person", "address")) as Masked_Output
-# MAGIC from austin_choi_demo_catalog.demo_data.customer_demo_data_customers
+# MAGIC from genai_in_production_demo_catalog.demo_data.customers
 # MAGIC limit 5
 
 # COMMAND ----------
@@ -252,12 +248,12 @@ base_url = f'https://{spark.conf.get("spark.databricks.workspaceUrl")}/serving-e
 
 # MAGIC %sql 
 # MAGIC SELECT
-# MAGIC   `Misspelled Make`,   -- Placeholder for the input column
+# MAGIC   `Misspelled_Make`,   -- Placeholder for the input column
 # MAGIC   ai_query(
-# MAGIC     'databricks-meta-llama-3-3-70b-instruct',
-# MAGIC     CONCAT(format_string('You will always receive a make of a car. Check to see if it is misspelled and a real car. Correct the mistake. Only provide the corrected make. Never add additional details'), `Misspelled Make`)    -- Placeholder for the prompt and input
+# MAGIC     'databricks-llama-4-maverick',
+# MAGIC     CONCAT(format_string('You will always receive a make of a car. Check to see if it is misspelled and a real car. Correct the mistake. Only provide the corrected make. Never add additional details'), `Misspelled_Make`)    -- Placeholder for the prompt and input
 # MAGIC   ) AS ai_guess  -- Placeholder for the output column
-# MAGIC FROM austin_choi_demo_catalog.demo_data.synthetic_car_data
+# MAGIC FROM genai_in_production_demo_catalog.demo_data.synthetic_car_data
 # MAGIC Limit 3;  -- Placeholder for the table name
 # MAGIC
 
@@ -774,10 +770,6 @@ Markdown(f"The LLM Output:\n\n {chat_completion.choices[0].message.content}")
 # MAGIC You can start to see how augmenting information in the prompt is critical to a successful use case. The LLM is heavily influenced by how and what you put into the prompt and we can see drastic improvements just by improving the prompts. 
 # MAGIC
 # MAGIC This is the basis of many compound AI solutions that are coming out today. We call various LLMs multiple times depending on what an LLM excels at and use prompt engineering to design a solution. Each prompt could potentially be drastically different depending on what step you are at in the solution. 
-# MAGIC
-# MAGIC <img width="1000px" src="https://blog.langchain.dev/content/images/2024/01/simple_multi_agent_diagram--1-.png">
-# MAGIC
-# MAGIC The picture above is from Langgraph, a branch of Langchain that helps build Agentic LLM solutions by connecting them together like a graph. Each "node" or LLM call (the researcher and router) have their own Prompt specifying what task they need to complete. They send outputs from each other across the edges or lines and use that information in their prompts to accomplish their tasks before sending a final output to the user. If the LLM determines a function or tool is necessary, then one is called. 
 
 # COMMAND ----------
 
@@ -810,7 +802,7 @@ Markdown(f"The LLM Output:\n\n {chat_completion.choices[0].message.content}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC <img width="250px" align="center" src="https://archives.bulbagarden.net/media/upload/thumb/4/4c/1013Sinistcha.png/1200px-1013Sinistcha.png"/>
+# MAGIC <img width="250px" align="center" src="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQiza7gy0eOXtdcsN_lOZ5vIlCLcE3wpOTJEzMpep0fLsZMHDeJslPIR-m1qmJ1tfdriyotY3WytZQHW2rgoAWeMHMFcd2mHyhSEKXuFtE"/>
 
 # COMMAND ----------
 
@@ -1042,12 +1034,104 @@ def run_conversation(input):
                 }
             )  # extend conversation with function response
         print(f"## Call #2 Prompt sent to LLM with function call results giving us the answer:\n\n {messages}\n")
+        print(messages)
+        print(type(messages))
         second_response = openai_client.chat.completions.create(
             model=MODEL_ENDPOINT_ID,
             messages=messages,
         )  # get a new response from the model where it can see the function response
         return second_response
 
+
+# COMMAND ----------
+
+import json
+from openai import RateLimitError
+# A token and the workspace's base FMAPI URL are needed to talk to endpoints
+fmapi_token = (
+ dbutils.notebook.entry_point.getDbutils()
+ .notebook()
+ .getContext()
+ .apiToken()
+ .getOrElse(None)
+)
+fmapi_base_url = (
+ base_url
+)
+openai_client = OpenAI(api_key=fmapi_token, base_url=fmapi_base_url)
+MODEL_ENDPOINT_ID = "databricks-meta-llama-3-3-70b-instruct"
+prompt = """You are a pokemon master and know every single pokemon ever created by the Pokemon Company. You will be helping people answer questions about pokemon. Stick strictly to the information provided to you to answer the question"""
+def run_conversation(input):
+    # Step 1: send the conversation and available functions to the model
+    messages = [{"role": "system", "content": prompt},
+    {"role": "user", "content": input}]
+    tools = [
+    {
+    "type": "function",
+    "function": {
+    "name": "pokemon_lookup",
+    "description": "Get information about a pokemon. This tool should be used to check to see if the pokemon is real or not as well.",
+    "parameters": {
+    "type": "object",
+    "properties": {
+    "pokemon": {
+    "type": "string",
+    "description": "The pokemon the user is asking information for e.g bulbasaur",
+    },
+    },
+    "required": ["pokemon"],
+    },
+    },
+    }
+    ]
+    #We've seen this response package in the past cells
+    response = openai_client.chat.completions.create(
+    model=MODEL_ENDPOINT_ID,
+    messages=messages,
+    tools=tools,
+    tool_choice="auto", # auto is default, but we'll be explicit
+    )
+    response_message = response.choices[0].message
+    print(f"## Call #1 The Reasoning from the llm determining to use the function call:\n\n {response_message}\n")
+    tool_calls = response_message.tool_calls
+    # Step 2: check if the model wanted to call a function
+    if tool_calls:
+        # Step 3: call the function
+        # Note: the JSON response may not always be valid; be sure to handle errors
+        available_functions = {
+        "pokemon_lookup": pokemon_lookup,
+        } # only one function in this example, but you can have multiple
+        messages.append(response_message) # extend conversation with assistant's reply
+        # Step 4: send the info for each function call and function response to the model
+    for tool_call in tool_calls:
+        function_name = tool_call.function.name
+        function_to_call = available_functions[function_name]
+        function_args = json.loads(tool_call.function.arguments)
+        function_response = function_to_call(
+        pokemon_name=function_args.get("pokemon")
+        )
+        
+        # Ensure function_response is a string
+    if isinstance(function_response, dict) or isinstance(function_response, list):
+        function_response = json.dumps(function_response)
+    elif not isinstance(function_response, str):
+        function_response = str(function_response)
+        
+    messages.append(
+    {
+    "tool_call_id": tool_call.id,
+    "role": "tool",
+    "content": function_response,
+    }
+    ) # extend conversation with function response
+    print(f"## Call #2 Prompt sent to LLM with function call results giving us the answer:\n\n {messages}\n")
+    print(messages)
+    print(type(messages))
+    second_response = openai_client.chat.completions.create(
+    model=MODEL_ENDPOINT_ID,
+    messages=messages,
+    ) # get a new response from the model where it can see the function response
+    return second_response
 
 # COMMAND ----------
 

@@ -6,13 +6,26 @@
 
 # COMMAND ----------
 
-# DBTITLE 1,Install Dependencies and Sample Data
-# MAGIC %run ./config
+# MAGIC %pip install --upgrade --quiet databricks-sdk lxml langchain databricks-vectorsearch cloudpickle openai pypdf llama_index langgraph==0.3.4 sqlalchemy transformers openai mlflow mlflow[databricks] langchain_community databricks-agents databricks-langchain uv markdownify
+# MAGIC dbutils.library.restartPython()
 
 # COMMAND ----------
 
-# DBTITLE 1,Set up Vector Search Index (If needed)
-# MAGIC %run ./rag_setup/rag_setup
+catalog = "genai_in_production_demo_catalog"
+agent_schema = "agents"
+demo_schema = "demo_data"
+volumeName = "rag_volume"
+folderName = "sample_pdf_folder"
+vectorSearchIndexName = "pdf_content_embeddings_index"
+# vectorSearchIndexName = "databricks_documentation_index"
+chunk_size = 1000
+chunk_overlap = 50
+embeddings_endpoint = "databricks-gte-large-en"
+VECTOR_SEARCH_ENDPOINT_NAME = "one-env-shared-endpoint-4" 
+chatBotModel = "databricks-meta-llama-3-3-70b-instruct"
+max_tokens = 2000
+finalchatBotModelName = "rag_bot"
+yourEmailAddress = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
 
 # COMMAND ----------
 
@@ -120,11 +133,11 @@ Your inputs are invaluable for the development team. By providing detailed feedb
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE OR REPLACE FUNCTION identifier(CONCAT(:catalog_name||'.'||:agent_schema||'.','purchase_location'))()
+# MAGIC CREATE OR REPLACE FUNCTION genai_in_production_demo_catalog.agents.purchase_location()
 # MAGIC     RETURNS Table(name STRING, purchases INTEGER)
 # MAGIC     COMMENT 'Use this tool to find total purchase information about a particular location. This tool will provide a list of destinations that you will use to help you answer questions. Only use this if the user asks about locations.'
 # MAGIC     RETURN SELECT dl.name AS Destination, count(tp.destination_id) AS Total_Purchases_Per_Destination
-# MAGIC              FROM main.dbdemos_fs_travel.travel_purchase tp join main.dbdemos_fs_travel.destination_location dl on tp.destination_id = dl.destination_id
+# MAGIC              FROM genai_in_production_demo_catalog.demo_data.fs_travel tp join genai_in_production_demo_catalog.demo_data.destinations dl on tp.destination_id = dl.destination_id
 # MAGIC              group by dl.name
 # MAGIC              order by count(tp.destination_id) desc
 # MAGIC              LIMIT 10
@@ -359,8 +372,8 @@ mlflow.models.set_model(AGENT)
 # MAGIC           tool_name="databricks_docs_retriever",
 # MAGIC           tool_description="Retrieves information about Databricks products from official Databricks documentation. This must be used",
 # MAGIC           columns=["id", "url", "content"],
-# MAGIC           embedding=DatabricksEmbeddings(endpoint=embeddings_endpoint),
-# MAGIC           text_column="content",
+# MAGIC         #   embedding=DatabricksEmbeddings(endpoint=embeddings_endpoint),
+# MAGIC         #   text_column="content",
 # MAGIC         )
 # MAGIC ]
 # MAGIC tools.extend(vector_search_tools)
@@ -525,21 +538,6 @@ with mlflow.start_run():
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #Test the MLflow Model! 
-# MAGIC
-# MAGIC Make sure it was properly logged! By running this test, we can confirm that we have logged everything we need to use this Agent
-
-# COMMAND ----------
-
-mlflow.models.predict(
-    model_uri=f"runs:/{logged_agent_info.run_id}/agent",
-    input_data={"messages": [{"role": "user", "content": "Hello!"}]},
-    env_manager="uv"
-)
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC #Register the MLflow Model to Unity Catalog
 # MAGIC
 # MAGIC To prepare our model for serving, we must make sure the model is registered to Unity Catalog
@@ -549,11 +547,13 @@ mlflow.models.predict(
 from config_import import demo_schema, catalog, finalchatBotModelName
 
 # TODO: define the catalog, schema, and model name for your UC model
+current_user = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
+username = current_user.split('@')[0].replace('.', '').replace('-', '')
 catalog = catalog
 schema = demo_schema
-model_name = finalchatBotModelName
+model_name = f"{finalchatBotModelName}_{username}"
 UC_MODEL_NAME = f"{catalog}.{schema}.{model_name}"
-
+print(UC_MODEL_NAME)
 # register the model to UC
 uc_registered_model_info = mlflow.register_model(
     model_uri=logged_agent_info.model_uri, name=UC_MODEL_NAME
@@ -607,7 +607,7 @@ docs = spark.table(f"{catalog}.{demo_schema}.databricks_documentation")
 docs = docs.withColumnRenamed("url", "doc_uri")
 evals = generate_evals_df(
     docs=docs,
-    num_evals=10,
+    num_evals=5,
     agent_description=agent_description,
     question_guidelines=question_guidelines,
 )
