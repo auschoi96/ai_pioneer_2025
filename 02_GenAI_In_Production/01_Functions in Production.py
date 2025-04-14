@@ -488,7 +488,7 @@ response_schema = """
 # COMMAND ----------
 
 import time
-endpoint_name = "databricks-meta-llama-3-1-8b-instruct" #14 seconds average 
+endpoint_name = "databricks-meta-llama-3-1-8b-instruct"
 start_time = time.time()
 
 result_structured = spark.sql(
